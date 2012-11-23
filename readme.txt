@@ -1,0 +1,1 @@
+Karousel is an open source project.  I want to create a jQuery karousel that is capable of almost every configuration.  We'll see how it turns out!
