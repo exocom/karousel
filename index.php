@@ -8,7 +8,7 @@
 		<meta http-equiv="Content-Language" content="EN"/>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 		<title>Creating another Carousel: Karousel</title>
-		<meta name="description" content="JQuery Carousel, lets you show mutiple images! by Kalarrs Topham"/>
+		<meta name="description" content="jQuery Carousel, lets you practically everyting! by Kalarrs Topham"/>
 		<meta name="keywords" content="JQuery, Carousel, Slide, Tabbing, Tabber, Kalarrs, Topham, Kalarrs Topham"/>
 		<meta charset="utf-8">				
 		<meta http-equiv="X-UA-Compatible" contents="IE=edge,chrome=1">
@@ -16,43 +16,50 @@
 
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js" type="text/javascript"></script>
 		<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.0/jquery-ui.min.js" type="text/javascript"></script>
+
 		<script type="text/javascript">
 			//<![CDATA[
 				( function($) {
+					// extend the jQuery object by adding the reverse array method from the array prototype
 					$.fn.reverse = [].reverse;
 					
 					$.karousel = function(context,settings) {
-						t = this; //Store this instance of Karosel
+						t = this; //Store this instance of Karosel.  This is so a page can have mutiple karousels!
 						$karousel = $(context); //Store the karousel element
 						
 						// [Left , Right] (Used to dertermine position)  if Left > Right then the loop has items from the end to the right
+						// Start at 0 because we haven't loaded any images yet
 						t.position = [0,0];
 						
 // TODO : Gracefull Error Handeling
-// TODO : error Object?						
+// TODO : error Object or Message Object? Update: started a error object, now I want to convert this into a message object.
 						t.error = {
 							'Fatal': [],
 							'Warning' : [],
 							'Unknown' : []
 						};
 
+						// t.s = Settings
 						t.s = $.extend(true,{}, {
 							mode: 'manual', // manual: will not tranistion ie waits for user to trigger transistion, auto: will use the transition.duration to call the transition. transtion automatically.
 							items: { // items object contains all of the attributes about the items in the karousel
 								perPage: 1, // How many items are visible at a time in the mask
-								total: null, //
-								selector: '.items > li',
-								fetch: { // Allows the items to be fetched on each transition
+// TODO: Possibly move items.total into the AJAX methods.
+								total: null, // How many items in total their are.  Used in conjunction with AJAX so the karousel can determine the correct call to make
+								selector: '.items > li', // The selctore that get the wrapper of the itmes.
+								fetch: { // Allows the items to be fetched from the docuemnt or from an ajax call
 									from: 'document', // document will retrieve the items from the karousel element upon load.
+// TODO: Possibly move items.fetch.frequency and items.fetch.url into the AJAX methods?
 									frequency: 'once', // Will store the items and not call the fetch method again.
 									url: '' // Where if ajax is used
 								},
 								repeat: false, // If true the carosel will not appeat to have an end.
-								size: 'auto', // Have the plugin calculate the width/height based on items.perPage (includes padding and margin on each li)
+								size: 'auto', // Have this plugin calculate the width/height based on items.perPage (includes padding and margin on each li)
 								buffer: true, // Add an addition margin value to the calulation of the li width/height (does interal check that margin is only on one side)
 								orientation: 'horizontal',
 								direction: 'auto',
-								defaultCss: {}
+								defaultCss: {},  // Css can be passed to be applied to the items by default.  Usefull in AJAX
+								container: '.items' // Selector for the items
 							},
 							transition: {
 								moveNumberOfItems: 1, // By default when trasition is called how many items to move by
@@ -70,7 +77,7 @@
 								size: '400px',
 								overflowMarginHorizontal: 'right',
 								overflowMarginVertical: 'bottom',
-								defaultCss: {'position':'relative','overflow':'hidden'}
+								defaultCss: {'position':'relative','overflow':'hidden'} // This makes the mask hide the non visible itmes.  However if one wanted the items could be visilbe. etc.
 							}
 						}, settings);
 						
@@ -159,6 +166,8 @@
 											$.each(t.error,function(k,v) {
 											   validTypes.push(k);
 											});
+// TODO: Make sure to check if console exists, otherwise output as a dialog window.
+// TODO: Add a "SupressMessages" option so in production enviroment the carousle does not output anything.
 											t.in.addError('Warning','An invalid type supplied to the outputError method.\nType supplied: '+type+'\nValid types are ['+validTypes.join(',')+',all]');
 											t.outputError('Warning');
 										} else {
@@ -203,13 +212,22 @@
 								// Check the item fetch from value.
 								switch(t.s.items.fetch.from) {
 									case 'document':
+										// Store the container for the items
+										if( !(t.$karousel = $(t.s.items.container)).length > 0) {
+											t.in.addError('Fatal','Unable to find items container to use for the karousel.\nSelector supplied: ' + t.s.items.container+'\njQuery matched these items'+$(t.s.items.container));
+											t.in.outputError();
+											return;
+										}
 										// Check to see if items exist.
+// TODO : change the selector to be a filter of Container?
 										if( (t.$items = $(t.s.items.selector,$karousel)).length > 0) {
 											t.in.setupKarousel();
 										} else {
 											t.in.addError('Fatal','Unable to find items to use for the karousel.\nSelector supplied: ' + t.s.items.selector+'\njQuery matched these items'+$(t.s.items.selector));
 											t.in.outputError();
+											return;
 										}
+										
 									break;
 									case 'ajax':
 										try {
@@ -234,7 +252,11 @@
 // TODO : Upon Abstracting the handling of the response should be left up to the end user.
 // The expected response should return only the items.
 // TODO : Add selector for items VS items > li .parent
-													t.$karousel = $('.items');
+													if( !(t.$karousel = $(t.s.items.container)).length > 0) {
+														t.in.addError('Fatal','Unable to find items container to use for the karousel.\nSelector supplied: ' + t.s.items.container+'\njQuery matched these items'+$(t.s.items.container));
+														t.in.outputError();
+														return;
+													}
 													t.$karousel.html(t.$items = $(html).hide());
 													
 													t.in.setupKarousel();
@@ -258,7 +280,6 @@
 								}
 							},
 							'setupKarousel': function() {
-								console.log('Hey');
 // TODO : allowing EM / % / px to be passed to the karousel
 								if($karousel.attr('style')) {
 									karouselWidth = $karousel.attr('style').match(/width:(.*)(?:px|%|em|;)/)[1].trim() || '';
@@ -347,9 +368,6 @@
 										return;
 									break;
 								}
-								
-								// Store the Container (The Element that contains the items)
-			//					t.$karousel = t.$items.parent();
 
 								// Store items into an array in memory
 								t.kitems = t.$items.css(t.s.items.defaultCss).show().clone(); // Clone into an array in memory!
@@ -634,8 +652,7 @@
 							perPage: 3,
 							repeat:true,
 							fetch: {
-								from:'ajax',
-								url:'ajax.php'
+								from:'document'
 							}
 						},
 						transition:{
@@ -646,6 +663,9 @@
 							overflowMarginHorizontal:'both'
 						},
 						afterInit: function() {
+// TODO: pass the karousel in the CallBack Functions
+// TODO: create the following callbacks : beforeTransition, afterTranistion, beforePause, afterPause, beforeResume, afterResume.
+
 							$('.karousel .mask').position({my:'center',at:'center',of:$('.karousel')});
 							$('.karousel .next').position({my:'right center',at:'right center',of:$('.karousel .next').parents('.karousel')});
 							$('.karousel .prev').position({my:'left center',at:'left center',of:$('.karousel .prev').parents('.karousel')});
@@ -688,24 +708,28 @@
 			//]]>
 		</script>
 				
-		<link rel="stylesheet" href="http://yui.yahooapis.com/3.5.1/build/cssreset/cssreset-min.css">
+		<link rel="stylesheet" href="http://yui.yahooapis.com/3.5.1/build/cssreset/cssreset-min.css" type="text/css" media="all" />
+		<link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.0/themes/base/jquery-ui.css" type="text/css" media="all" />
+		<link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.0/themes/dark-hive/jquery-ui.css" type="text/css" media="all" />
 <!--
 		<link rel="stylesheet" href="/css/1020_12_col.css" />
 		<link rel="stylesheet" href="/css/style.css" />
 -->
 		<style type="text/css">
-			.karousel { overflow: hidden; clear: both; width: 50%; }
+			.karousel { overflow: hidden; clear: both; width: 95%; }
 			.karousel img { width: 180px; }
 			
 			.karousel .items > li { /*float: left;*/ margin-left: 10px; }
 			
-			.karousel .mask, .karousel .control.move { /*float: left;*/ }
+			.karousel .mask, .karousel .control.move { float: left; }
+/* TODO: Add position logic to karousel.  It will float according to which items are on the same ROW! */			
+			
 			.karousel .control.move { display: block; width: 50px; background: #ccc; cursor: pointer; }
 
 			/* Colorize */
 			
 			.karousel .items > li { background: #fff; }
-			.karousel .mask { overflow: hidden; background-color: blue; }
+			.karousel .mask { overflow: hidden; background-color: blue; float: left; }
 		</style>
 		
 	</head>
@@ -723,14 +747,14 @@
 					<li><a href="img/lib.png"><img src="img/lib.png" alt="LIB Tech Skateboard" title="LIB Tech Skateboard" /></a></li>
 					<li><a href="img/Pyro-GX.jpg"><img src="img/Pyro-GX.jpg" alt="Pyro GX" title="Pyro GX" /></a></li>
 					<li><a href="img/forum_grudge_f.jpg"><img src="img/forum_grudge_f.jpg" alt="Forum Snowboard" title="Forum Snowboard" /></a></li>
-			
+				 */?>
 					<li><a href="img/1.png"><img src="img/1.png" alt="1" title="1" /></a></li>
 					<li><a href="img/2.png"><img src="img/2.png" alt="2" title="2" /></a></li>
 					<li><a href="img/3.png"><img src="img/3.png" alt="3" title="3" /></a></li>
 					<li><a href="img/4.png"><img src="img/4.png" alt="4" title="4" /></a></li>
 					<li><a href="img/5.png"><img src="img/5.png" alt="5" title="5" /></a></li>
-				*/
-				?>
+				
+				<?php /* */?>
 				</ul>
 				<span class="control move next"><a href="#">Next</a></span>
 			</div>
