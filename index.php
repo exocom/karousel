@@ -535,6 +535,31 @@
 									t.in.slide(s, newItems);
 								} 
 							},
+							'updatePagination': function() {
+								
+								// Check if pagination exists
+// TODO: incoporate settings for pagination, including selector and if generated / on page / ,etc.
+								if(($p = $('.pagination li')).length > 0 ) {
+									console.log($p);
+									if($p.length == t.kitems.length) {
+										$p.removeClass('active');
+									
+										if(t.position[0]>t.position[1]) {
+											$p.slice(t.position[0] - 1,t.kitems.length).addClass('active');
+											$p.slice(0,t.position[1]).addClass('active');
+										} else {
+											$p.slice(t.position[0] - 1,t.position[1]).addClass('active');
+										}
+										
+									} else {
+										console.log('pagination length is diffrent');
+									}
+								} else {
+									console.log('fail');
+// TODO: Fail message here									
+								}
+							
+							},
 							'slide' : function(s,newItems) {
 								if(s.direction == 'next') {
 									t.rotating = {
@@ -558,6 +583,8 @@
 											var first = (s.newPosition < t.s.items.perPage) ? s.newPosition - t.s.items.perPage + t.kitems.length + 1  : s.newPosition - t.s.items.perPage + 1;
 											t.position = [ first , s.newPosition]; // Store the position in the array, since matching could be a bitch
 											console.log(t.position);
+											
+											t.in.updatePagination();
 											//remove this
 											delete t.rotating;
 										}
@@ -585,6 +612,8 @@
 											var last = ((s.newPosition + t.s.items.perPage - 1) > t.kitems.length) ? -(t.kitems.length - (s.newPosition + t.s.items.perPage -1))  : s.newPosition + t.s.items.perPage - 1;
 											t.position = [ s.newPosition , last]; // Store the position in the array, since matching could be a bitch
 											console.log(t.position);
+											
+											t.in.updatePagination();
 											//remove this
 											delete t.rotating;
 										}
@@ -727,6 +756,13 @@
 			
 			.karousel .items > li { background: #fff; }
 			.karousel .mask { overflow: hidden; background-color: blue; float: left; }
+			
+			/* Pagination */
+			.pagination { float: left; left: 50%; position: relative; margin-top: 50px; }
+			.pagination li { text-align: center; float: left; left: -50%; position: relative; width: 12px; border-bottom-width: 4px; border-bottom-style: solid; border-bottom-color: transparent; border-right: 1px solid #ccc; }
+			.pagination li:first-child { border-left: solid 1px #ccc; }
+			.pagination li.active { border-bottom-color: red; }
+			
 		</style>
 		
 	</head>
@@ -755,8 +791,16 @@
 				 <?php /* */?>
 				</ul>
 				<span class="control move next"><a href="#">Next</a></span>
+				<div style="clear:both;">
+					<ul class="pagination">
+						<li class="active">1</li>
+						<li class="active">2</li>
+						<li class="active">3</li>
+						<li>4</li>
+						<li>5</li>
+					</ul>
+				</div>
 			</div>
-			
 		</div>
 		<footer>
 		</footer>
