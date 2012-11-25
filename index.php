@@ -83,7 +83,7 @@
 							pagination: {
 								selector: '> li',
 								type: 'item', // item or page
-								defaultCss: {'position':'relative','overflow':'hidden', 'float': 'left'},
+								defaultCss: {'position':'relative','overflow':'hidden','clear':'both'},
 								container: '.pagination',
 // TODO : normalize with selectors in ITEMS
 /*
@@ -422,11 +422,10 @@
 								
 								t.$items.html(t.kitems.slice(0,t.s.items.perPage).clone());
 								t.position = [1,t.s.items.perPage]; // Store the position in the array, since matching could be a bitch.
-								console.log($karousel);
 								$karousel.data('karousel', t.pub );
 								
 // TODO : before calling this method check to see if patination is activated in settings
-								
+								t.in.setupPagination();
 								if(typeof t.s.afterInit == 'function') t.s.afterInit();
 								
 								t.in.outputError();
@@ -434,7 +433,7 @@
 							'setupPagination': function() {
 
 								// Check if the user created the pagination
-								if( !(t.$pag = $(t.s.pagination.selector)).length ) {  // Create it if they didn't
+								if( !(t.$pag = $(t.s.pagination.container)).length ) {  // Create it if they didn't
 // TODO : update naming of t.$items to t.$items
 // TODO : parse the supplied selector for class names IE check if selector has any.
 									t.$pag = $karousel.append($('div').addClass('pagination'));
@@ -443,18 +442,67 @@
 								t.$pag.css(t.s.pagination.defaultCss);
 								
 								//Check that the pagination has items
-								if( !(t.$pagItems = $(t.s.pagination.items.selector,t.$pag)).length) {
-									t.$pagItems = $pag.append($('ul').addClass('items'));
+								if( !(t.$pagItem = $(t.s.pagination.selector,t.$pag)).length) {
+									t.$pagItem = $pag.append($('li'));
 								}
 								
-								//Apply the default css
-								t.$pagItems.css(t.s.pagination.items.defaultCss);
-								return;
-								//Check that the pagination has items
-								if( !(t.$pagItem = $(t.s.pagination.item.selector,t.$pagItems)).length) {
-									t.$pagItems = $pag.append($('ul').addClass('items'));
-								}
+// TODO : clone li or use function to repalce content with item number or page number. etc.								
 								
+// TODO : gather all of the css info from the existing object and apply it to the new clones
+								var $newPagItem = $();
+								$.each(t.kitems,function(key,val) {
+									$newPagItem = $newPagItem.add(t.$pagItem.eq(0).clone().html(key + 1));
+								});
+								t.$pag.html((t.$pagItem = $newPagItem)).wrap($('<div class="pagWrap"/>').css({'float':'left','overflow':'hidden'}));
+								t.$pagWrap = $('.pagWrap',$karousel);
+								t.$pagWrap.append('<div class="control"/>');
+
+								$('.pagWrap .control',$karousel).css('width',(t.$pagItem.outerWidth() * t.s.items.perPage) - 3).draggable({
+									cursor: "e-resize",
+									axis: 'x',
+									containment: "parent",
+									stop: function() {
+										$pc = $(this);
+										pcl = $pc.position().left;
+										pcow = $pc.outerWidth();
+										var start = t.position[0];
+										t.$pagItem.each(function(i) {
+											$p = $(this);
+											pl = $p.position().left;
+											pow = $p.outerWidth();
+											
+											if(pl <= pcl && (pl + pow) > pcl) {
+												$pc.css({'left':pl});
+												start = i + 1;
+											}
+											/* Don't think I need this 
+											if(pl < pcl && (pcl+pcow) <= (pl + pow)) {
+												var $end = $pc;
+											}
+											*/
+										});
+										console.log(start);
+										if(t.position[0] > start) {
+											console.log('move backwards');
+											t.in.rotate({
+												'direction': 'prev',
+												'items' : t.position[0] - start
+											});
+										} else if(t.position[0] < start) {
+											console.log('move forwards');
+											t.in.rotate({
+												'direction': 'next',
+												'items' : start - t.position[0]
+											});
+										} else {
+											console.log('No move');
+										}
+										
+										
+									}
+								});
+								
+								t.in.updatePagination();
 							},
 							
 							'rotate' : function(s) {					
@@ -598,7 +646,6 @@
 								// Check if pagination exists
 // TODO: incoporate settings for pagination, including selector and if generated / on page / ,etc.
 								if(($p = $('.pagination li')).length) {
-									console.log($p);
 									if($p.length == t.kitems.length) {
 										$p.removeClass('active');
 									
@@ -753,6 +800,7 @@
 							$('.karousel .mask').position({my:'center',at:'center',of:$('.karousel')});
 							$('.karousel .next').position({my:'right center',at:'right center',of:$('.karousel .next').parents('.karousel')});
 							$('.karousel .prev').position({my:'left center',at:'left center',of:$('.karousel .prev').parents('.karousel')});
+							$('.karousel .pagWrap').position({my:'center bottom',at:'center bottom',of:$('.karousel .pagination').parents('.karousel')});
 						}
 					}).eq('0').data('karousel');
 					//x = $('.karousel').karousel({items.perPage: 3,karouselWidth: 600, type:'hasEnds'}).eq('0').data('karousel');
@@ -817,10 +865,10 @@
 			
 			/* Pagination */
 			.karousel .pagination { position: relative; margin-top: 50px; }
-			.karousel .pagination .items > li { text-align: center; float: left; width: 12px; border-bottom-width: 4px; border-bottom-style: solid; border-bottom-color: transparent; border-right: 1px solid #ccc; }
-			.karousel .pagination .items > li:first-child { border-left: solid 1px #ccc; }
-			.karousel .pagination .items > li.active { border-bottom-color: red; }
-			
+			.karousel .pagination > li { text-align: center; float: left; width: 12px; border-bottom-width: 4px; border-bottom-style: solid; border-bottom-color: transparent; border-right: 1px solid #ccc; }
+			.karousel .pagination > li:first-child { border-left: solid 1px #ccc; }
+			.karousel .pagination > li.active { border-bottom-color: red; }
+			.karousel .pagWrap .control { height: 30px; background: blue; width: 30px; }
 		</style>
 		
 	</head>
