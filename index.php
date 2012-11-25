@@ -46,7 +46,7 @@
 								perPage: 1, // How many items are visible at a time in the mask
 // TODO: Possibly move items.total into the AJAX methods.
 								total: null, // How many items in total their are.  Used in conjunction with AJAX so the karousel can determine the correct call to make
-								selector: '.items > li', // The selctore that get the wrapper of the itmes.
+								selector: '> li', // The selctore that get the wrapper of the itmes.
 								fetch: { // Allows the items to be fetched from the docuemnt or from an ajax call
 									from: 'document', // document will retrieve the items from the karousel element upon load.
 // TODO: Possibly move items.fetch.frequency and items.fetch.url into the AJAX methods?
@@ -77,7 +77,25 @@
 								size: '400px',
 								overflowMarginHorizontal: 'right',
 								overflowMarginVertical: 'bottom',
+								selector: '.mask',
 								defaultCss: {'position':'relative','overflow':'hidden'} // This makes the mask hide the non visible itmes.  However if one wanted the items could be visilbe. etc.
+							},
+							pagination: {
+								selector: '> li',
+								type: 'item', // item or page
+								defaultCss: {'position':'relative','overflow':'hidden', 'float': 'left'},
+								container: '.pagination',
+// TODO : normalize with selectors in ITEMS
+/*
+								items: {
+									selector: '.items',
+									defaultCss: {'float':'left'}
+								},
+								item: {
+									selector: '> li',
+									defaultCss: {'float':'left'}
+								}
+*/
 							}
 						}, settings);
 						
@@ -139,7 +157,7 @@
 								if(typeof t.error[type] == 'undefined') {
 									t.error('Unknown',message);
 								} else {
-									if(message.length > 0 ) {
+									if(message.length) {
 										t.error[type].push(Date() + " \n " + message)
 									} else {
 										t.error('Unknown','An error was thrown, however the message empty');
@@ -151,7 +169,7 @@
 								switch(type) {
 									case 'all':
 										$.each(t.error,function(k,v) {
-											if(v.length > 0) {
+											if(v.length) {
 												console.group(k);
 												$.each(v,function(v2) {
 													console.log(v[v2]);
@@ -171,7 +189,7 @@
 											t.in.addError('Warning','An invalid type supplied to the outputError method.\nType supplied: '+type+'\nValid types are ['+validTypes.join(',')+',all]');
 											t.outputError('Warning');
 										} else {
-											if(t.error[type].length > 0) {
+											if(t.error[type].length) {
 												console.group(type);
 												$.each(t.error[type],function(v2) {
 													console.log(v2);
@@ -208,19 +226,27 @@
 								return true;
 							}
 							,
-							'init': function() {
+							'init': function() {							
 								// Check the item fetch from value.
 								switch(t.s.items.fetch.from) {
 									case 'document':
 										// Store the container for the items
-										if( !(t.$karousel = $(t.s.items.container)).length > 0) {
-											t.in.addError('Fatal','Unable to find items container to use for the karousel.\nSelector supplied: ' + t.s.items.container+'\njQuery matched these items'+$(t.s.items.container));
-											t.in.outputError();
-											return;
+										switch((t.$items = $(t.s.items.container)).length) {
+											case 0:
+												t.in.addError('Fatal','Unable to find items container to use for the karousel.\nSelector supplied: ' + t.s.items.container+'\njQuery matched these items'+t.$items);
+												t.in.outputError();
+												return;
+											break;
+											case 1:	break;
+											default:
+												t.in.addError('Fatal','More than find items container to use for the karousel.\nSelector supplied: ' + t.s.items.container+'\njQuery matched these items'+t.$items);
+												t.in.outputError();
+												return;
+											break;
 										}
 										// Check to see if items exist.
 // TODO : change the selector to be a filter of Container?
-										if( (t.$items = $(t.s.items.selector,$karousel)).length > 0) {
+										if((t.$item = $(t.s.items.selector,t.$items)).length) {
 											t.in.setupKarousel();
 										} else {
 											t.in.addError('Fatal','Unable to find items to use for the karousel.\nSelector supplied: ' + t.s.items.selector+'\njQuery matched these items'+$(t.s.items.selector));
@@ -252,12 +278,12 @@
 // TODO : Upon Abstracting the handling of the response should be left up to the end user.
 // The expected response should return only the items.
 // TODO : Add selector for items VS items > li .parent
-													if( !(t.$karousel = $(t.s.items.container)).length > 0) {
+													if(!(t.$items = $(t.s.items.container)).length) {
 														t.in.addError('Fatal','Unable to find items container to use for the karousel.\nSelector supplied: ' + t.s.items.container+'\njQuery matched these items'+$(t.s.items.container));
 														t.in.outputError();
 														return;
 													}
-													t.$karousel.html(t.$items = $(html).hide());
+													t.$items.html(t.$item = $(html).hide());
 													
 													t.in.setupKarousel();
 												}).fail(function(jqXHR, textStatus) {
@@ -280,6 +306,18 @@
 								}
 							},
 							'setupKarousel': function() {
+// TODO : for easiest css writing this should come first. NOTE AJAX may be a challenge with this?								
+								// Add a div that wraps the carousel.  The carousel width is applied to this and the carosel container is set to position relative.  This is how the items can slide.
+// TODO : use a better selector than just parent. IE pass in the mask selector
+// TODO : use a settings value for mask's selector 
+								t.$mask = t.$items.wrap($('<div class="mask">')).parent();
+								
+								// Add style to the karousel
+								t.$items.css({
+									left: '0',
+									position: 'relative'
+								});
+								
 // TODO : allowing EM / % / px to be passed to the karousel
 								if($karousel.attr('style')) {
 									karouselWidth = $karousel.attr('style').match(/width:(.*)(?:px|%|em|;)/)[1].trim() || '';
@@ -299,10 +337,9 @@
 								switch(t.s.items.orientation) {
 									case 'horizontal':
 										
-										var m1 = parseInt(t.$items.css('margin-left'));
-										var m2 = parseInt(t.$items.css('margin-right'));
+										var m1 = parseInt(t.$item.css('margin-left'));
+										var m2 = parseInt(t.$item.css('margin-right'));
 										var mt = m1 + m2;
-										
 										if(!t.in.itemSize(m1,m2,mt)) return;
 										
 // TODO : check the defaultCss is a valid css string(convert to object) or a valid jquery css object  Than add the itemSize and float left to that
@@ -335,8 +372,8 @@
 										}
 									break;
 									case 'vertical':
-										var m1 = parseInt(t.$items.css('margin-top'));
-										var m2 = parseInt(t.$items.css('margin-bottom'));
+										var m1 = parseInt(t.$item.css('margin-top'));
+										var m2 = parseInt(t.$item.css('margin-bottom'));
 										var mt = (m1 >= m2) ? m1 : m2;
 										if(!t.in.itemSize(m1,m2,mt)) return;
 										
@@ -370,38 +407,59 @@
 								}
 
 								// Store items into an array in memory
-								t.kitems = t.$items.css(t.s.items.defaultCss).show().clone(); // Clone into an array in memory!
+								t.kitems = t.$item.css(t.s.items.defaultCss).show().clone(); // Clone into an array in memory!
 
 								// Remove all items from the carousel
-								t.$items.remove();
+								t.$item.remove();
 								
 //TODO add logic for IF AJAX and EVERY!!!!!!!
-								// Add a div that wraps the carousel.  The carousel width is applied to this and the carosel container is set to position relative.  This is how the items can slide.
-								t.$karousel.wrap($('<div class="mask">').css(t.s.mask.defaultCss));
-								
-								// Add style to the karousel
-								t.$karousel.css({
-									left: '0',
-									position: 'relative'
-								});
+								t.$mask.css(t.s.mask.defaultCss);
 								
 								// Restore the desired number of visible items.
 // TODO : Add logic that checks that the amount of items is > the visible items.
 								// Otherwise need logic to check if carousel has ends or not
 								
 								
-								t.$karousel.html(t.kitems.slice(0,t.s.items.perPage).clone());
+								t.$items.html(t.kitems.slice(0,t.s.items.perPage).clone());
 								t.position = [1,t.s.items.perPage]; // Store the position in the array, since matching could be a bitch.
 								console.log($karousel);
 								$karousel.data('karousel', t.pub );
+								
+// TODO : before calling this method check to see if patination is activated in settings
 								
 								if(typeof t.s.afterInit == 'function') t.s.afterInit();
 								
 								t.in.outputError();
 							},
+							'setupPagination': function() {
+
+								// Check if the user created the pagination
+								if( !(t.$pag = $(t.s.pagination.selector)).length ) {  // Create it if they didn't
+// TODO : update naming of t.$items to t.$items
+// TODO : parse the supplied selector for class names IE check if selector has any.
+									t.$pag = $karousel.append($('div').addClass('pagination'));
+								}
+								//Apply the default css
+								t.$pag.css(t.s.pagination.defaultCss);
+								
+								//Check that the pagination has items
+								if( !(t.$pagItems = $(t.s.pagination.items.selector,t.$pag)).length) {
+									t.$pagItems = $pag.append($('ul').addClass('items'));
+								}
+								
+								//Apply the default css
+								t.$pagItems.css(t.s.pagination.items.defaultCss);
+								return;
+								//Check that the pagination has items
+								if( !(t.$pagItem = $(t.s.pagination.item.selector,t.$pagItems)).length) {
+									t.$pagItems = $pag.append($('ul').addClass('items'));
+								}
+								
+							},
+							
 							'rotate' : function(s) {					
 // TODO check if is rotating then add to the queue
-								if(t.$karousel.is(':animated')){
+								if(t.$items.is(':animated')){
 									console.log('animated');
 									return;
 								}
@@ -539,7 +597,7 @@
 								
 								// Check if pagination exists
 // TODO: incoporate settings for pagination, including selector and if generated / on page / ,etc.
-								if(($p = $('.pagination li')).length > 0 ) {
+								if(($p = $('.pagination li')).length) {
 									console.log($p);
 									if($p.length == t.kitems.length) {
 										$p.removeClass('active');
@@ -572,7 +630,7 @@
 											// Complete Rotation
 											
 											$('.items > *').not($('.items > *').slice(-(t.s.items.perPage))).remove();
-											t.$karousel.css({
+											t.$items.css({
 												width: t.s.mask.width,
 												left: '0',
 												position: 'relative'
@@ -589,8 +647,8 @@
 											delete t.rotating;
 										}
 									};
-									t.$karousel.css({width: '+='+s.items * t.itemOuterSize});
-									t.$karousel.append(newItems);
+									t.$items.css({width: '+='+s.items * t.itemOuterSize});
+									t.$items.append(newItems);
 								}
 								if(s.direction == 'prev') {
 									t.rotating = {
@@ -602,7 +660,7 @@
 										complete: function () {
 											// Complete Rotation
 											$('.items > *').not($('.items > *').slice(0,t.s.items.perPage)).remove();
-											t.$karousel.css({
+											t.$items.css({
 												width: t.s.mask.width,
 												left: '0',
 												position: 'relative'
@@ -618,16 +676,16 @@
 											delete t.rotating;
 										}
 									};
-									t.$karousel.css({
+									t.$items.css({
 										width: '+='+s.items * t.itemOuterSize,
 										left: -(s.items * t.itemOuterSize)
 									});
-									t.$karousel.prepend(newItems.reverse().clone());
+									t.$items.prepend(newItems.reverse().clone());
 								}
 								
 								// Animate the carousel
 								t.rotating.start = new Date();
-								t.$karousel.animate(t.rotating.animate, t.rotating.settings.speed, t.rotating.complete);
+								t.$items.animate(t.rotating.animate, t.rotating.settings.speed, t.rotating.complete);
 							},
 							'removeNonVisible' : function($elements) {
 								$elements = $elements || false;
@@ -641,9 +699,9 @@
 								}
 							},
 							'pause' : function() {
-								if(typeof t.rotating == 'object' && t.$karousel.is(':animated')) {
+								if(typeof t.rotating == 'object' && t.$items.is(':animated')) {
 									t.rotating.stop = new Date();
-									t.$karousel.stop();
+									t.$items.stop();
 								} else if (typeof t.rotating == 'object'){
 									t.in.play();
 								}
@@ -651,7 +709,7 @@
 							'play' : function() {
 								
 								if(typeof t.rotating == 'object') {
-									t.$karousel.animate(t.rotating.animate,  t.rotating.settings.speed - (t.rotating.stop - t.rotating.start), t.rotating.complete);
+									t.$items.animate(t.rotating.animate,  t.rotating.settings.speed - (t.rotating.stop - t.rotating.start), t.rotating.complete);
 									//return t.rotating;
 								} else {
 									// TODO : ERROR Sorry nothing to do the carousel was not paused during an animation
@@ -745,7 +803,7 @@
 			.karousel { overflow: hidden; clear: both; width: 95%; }
 			.karousel img { width: 180px; }
 			
-			.karousel .items > li { /*float: left;*/ margin-left: 10px; }
+			.karousel .mask .items > li { /*float: left;*/ margin-left: 10px; }
 			
 			.karousel .mask, .karousel .control.move { float: left; }
 /* TODO: Add position logic to karousel.  It will float according to which items are on the same ROW! */			
@@ -754,14 +812,14 @@
 
 			/* Colorize */
 			
-			.karousel .items > li { background: #fff; }
+			.karousel .mask .items > li { background: #fff; }
 			.karousel .mask { overflow: hidden; background-color: blue; float: left; }
 			
 			/* Pagination */
-			.pagination { float: left; left: 50%; position: relative; margin-top: 50px; }
-			.pagination li { text-align: center; float: left; left: -50%; position: relative; width: 12px; border-bottom-width: 4px; border-bottom-style: solid; border-bottom-color: transparent; border-right: 1px solid #ccc; }
-			.pagination li:first-child { border-left: solid 1px #ccc; }
-			.pagination li.active { border-bottom-color: red; }
+			.karousel .pagination { position: relative; margin-top: 50px; }
+			.karousel .pagination .items > li { text-align: center; float: left; width: 12px; border-bottom-width: 4px; border-bottom-style: solid; border-bottom-color: transparent; border-right: 1px solid #ccc; }
+			.karousel .pagination .items > li:first-child { border-left: solid 1px #ccc; }
+			.karousel .pagination .items > li.active { border-bottom-color: red; }
 			
 		</style>
 		
