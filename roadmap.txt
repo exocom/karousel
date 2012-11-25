@@ -1,0 +1,24 @@
+Add a configurator - items/layout/etc
+Add layout support using jqueryui
+Add support for liquid layout
+Add support for ajax
+Add support for changing speed/duration on the fly
+Add support for changing any feature on the fly... transition for example
+Add another transition
+Add create a transition documentation
+Add pagination check for if show > itmes.length * 2 IE how to visually show that items are repeated 2x without using numbers?
+Add Convert to TABBING...  Maybe we could have the tabbing object override the pagination internally? Hmm
+Add How to write css for karousel.  Rules shound be somewhat ambigiouos for example Do Not Do this .karousel (>) .items > li {rules} DO THIS .karousel .items > li {rules} because the cross fade transistion will need to wrap each group in an SPAN/DIV/UL etc
+	So given <ul><li>1</li><li>2</li><li>3</li></ul> the carusels structure durning transition will be <span><ul class="items"><li>1</li><li>2</li><li>3</li></ul></span><span><ul class="items"><li>4</li><li>5</li><li>6</li></ul></span>
+	THUS the span breaks the immediate rule!
+	class on the karousel as a whole.
+	class on the items contanier
+	matching structure on the items either > div or > span or > li for example.  this keeps classes minimized.
+	class on the controls: first, last, next, prev
+	class on the pagination container.
+	matching structure on the pagination either > div or > span or > li for example.
+Add unit testing
+	1 items on auto, etc....
+	Have it be a possiblities test?  Maybe execute each method with default options?
+
+	
