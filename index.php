@@ -652,7 +652,8 @@
 							perPage: 3,
 							repeat:true,
 							fetch: {
-								from:'document'
+								from:'ajax',
+								url:'ajax.php'
 							}
 						},
 						transition:{
@@ -747,14 +748,14 @@
 					<li><a href="img/lib.png"><img src="img/lib.png" alt="LIB Tech Skateboard" title="LIB Tech Skateboard" /></a></li>
 					<li><a href="img/Pyro-GX.jpg"><img src="img/Pyro-GX.jpg" alt="Pyro GX" title="Pyro GX" /></a></li>
 					<li><a href="img/forum_grudge_f.jpg"><img src="img/forum_grudge_f.jpg" alt="Forum Snowboard" title="Forum Snowboard" /></a></li>
-				 */?>
+				 
 					<li><a href="img/1.png"><img src="img/1.png" alt="1" title="1" /></a></li>
 					<li><a href="img/2.png"><img src="img/2.png" alt="2" title="2" /></a></li>
 					<li><a href="img/3.png"><img src="img/3.png" alt="3" title="3" /></a></li>
 					<li><a href="img/4.png"><img src="img/4.png" alt="4" title="4" /></a></li>
 					<li><a href="img/5.png"><img src="img/5.png" alt="5" title="5" /></a></li>
 				
-				<?php /* */?>
+				*/?>
 				</ul>
 				<span class="control move next"><a href="#">Next</a></span>
 			</div>
