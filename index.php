@@ -598,7 +598,7 @@
 								
 								// Animate the carousel
 								t.rotating.start = new Date();
-								t.$karousel.animate(t.rotating.animate, t.rotating.settings.speed, t.rotating.complete);
+								t.$karousel.animate(t.rotating.animate, t.rotating.settings.speed, 'linear', t.rotating.complete);
 							},
 							'removeNonVisible' : function($elements) {
 								$elements = $elements || false;
@@ -622,7 +622,10 @@
 							'play' : function() {
 								
 								if(typeof t.rotating == 'object') {
-									t.$karousel.animate(t.rotating.animate,  t.rotating.settings.speed - (t.rotating.stop - t.rotating.start), t.rotating.complete);
+									// Set the t.rotating.speed to the new quantity, this is so if you pause then play then pause then play it is still the orininal speed (IE appears to resume at the same rate.)
+									t.$karousel.animate(t.rotating.animate,  (t.rotating.settings.speed = t.rotating.settings.speed - (t.rotating.stop - t.rotating.start)), 'linear', t.rotating.complete);
+									//Reset the start time.  Start time is used to calculate the amount of time between the animation and the press of the pause button.  Not store when the original rotate begain.
+									t.rotating.start = new Date();
 									//return t.rotating;
 								} else {
 									// TODO : ERROR Sorry nothing to do the carousel was not paused during an animation
